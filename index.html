@@ -5,45 +5,42 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Latest YouTube Video</title>
   <script>
-    const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg'; // Your API Key
-    const CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g'; // Your Channel ID
+    const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';
+    const CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';
 
     async function redirectToLatestVideo() {
       try {
-        // Step 1: Get recent videos
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10`;
-        const searchResponse = await fetch(searchUrl);
-        const searchData = await searchResponse.json();
+        // Step 1: Get recent uploads from the channel
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10&type=video`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
 
-        const videoItems = searchData.items.filter(item =>
-          item.id.kind === 'youtube#video'
-        );
+        // Extract video IDs
+        const videoIds = searchData.items.map(item => item.id.videoId).join(',');
 
-        if (videoItems.length === 0) {
-          document.body.innerHTML = '<p>No videos found on the channel.</p>';
-          return;
-        }
-
-        // Step 2: Get detailed info to filter out live streams and premieres
-        const videoIds = videoItems.map(v => v.id.videoId).join(',');
+        // Step 2: Get full details to filter out live content
         const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
-        const detailsResponse = await fetch(detailsUrl);
-        const detailsData = await detailsResponse.json();
+        const detailsRes = await fetch(detailsUrl);
+        const detailsData = await detailsRes.json();
 
-        const nonLiveVideos = detailsData.items.filter(video => {
+        // Step 3: Filter out livestreams and upcoming/premieres
+        const filtered = detailsData.items.filter(video => {
           const live = video.liveStreamingDetails;
-          return !live || !live.actualStartTime; // Not a livestream/premiere
+          const isLive = !!(live && live.actualStartTime && !live.actualEndTime);
+          const isUpcoming = !!(live && live.scheduledStartTime && !live.actualStartTime);
+          return !isLive && !isUpcoming; // Only keep normal uploaded videos
         });
 
-        if (nonLiveVideos.length === 0) {
-          document.body.innerHTML = '<p>No non-live videos found.</p>';
-          return;
+        if (filtered.length > 0) {
+          const latest = filtered[0];
+          const videoId = latest.id;
+          window.location.href = `https://www.youtube.com/watch?v=${videoId}`;
+        } else {
+          document.body.innerHTML = '<p>No regular videos found.</p>';
         }
-
-        const latestVideoId = nonLiveVideos[0].id;
-        window.location.href = `https://www.youtube.com/watch?v=${latestVideoId}`;
-      } catch (error) {
-        document.body.innerHTML = `<p>Error: ${error.message}</p>`;
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = `<p>Error: ${err.message}</p>`;
       }
     }
 
@@ -51,11 +48,6 @@
   </script>
 </head>
 <body>
-  <p>Finding the latest video...</p>
-</body>
-</html>
-
-<body>
-  <p>Loading latest video...</p>
+  <p>Redirecting to the latest video...</p>
 </body>
 </html>

@@ -10,32 +10,47 @@
 
     async function redirectToLatestVideo() {
       try {
-        // Get recent videos
-        const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=snippet,id&order=date&maxResults=10&type=video`;
-        const response = await fetch(url);
-        const data = await response.json();
+        // Step 1: Get latest 10 video IDs
+        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=id&order=date&maxResults=10&type=video`;
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
 
-        // Filter out live and upcoming videos
-        const nonLiveVideos = data.items.filter(item => {
-          return item.snippet.liveBroadcastContent === 'none';
+        const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+
+        // Step 2: Get video details, including liveStreamingDetails
+        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
+        const detailsRes = await fetch(detailsUrl);
+        const detailsData = await detailsRes.json();
+
+        // Step 3: Filter out any livestream (past, current, or upcoming)
+        const regularUploads = detailsData.items.filter(video => {
+          const live = video.liveStreamingDetails;
+          const isLive = live && !live.actualEndTime;
+          const isPastStream = live && live.actualEndTime;
+          return !isLive && !isPastStream;
         });
 
-        if (nonLiveVideos.length === 0) {
-          document.body.innerHTML = '<p>No non-live videos found.</p>';
-          return;
+        if (regularUploads.length > 0) {
+          const latest = regularUploads[0];
+          const videoId = latest.id;
+          window.location.href = `https://www.youtube.com/watch?v=${videoId}`;
+        } else {
+          document.body.innerHTML = '<p>No regular uploads found (excluding livestreams).</p>';
         }
-
-        const latestVideoId = nonLiveVideos[0].id.videoId;
-        window.location.href = `https://www.youtube.com/watch?v=${latestVideoId}`;
-      } catch (error) {
-        console.error(error);
-        document.body.innerHTML = `<p>Error: ${error.message}</p>`;
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = `<p>Error: ${err.message}</p>`;
       }
     }
 
     window.onload = redirectToLatestVideo;
   </script>
 </head>
+<body>
+  <p>Redirecting to the latest video...</p>
+</body>
+</html>
+
 <body>
   <p>Redirecting to the latest video...</p>
 </body>

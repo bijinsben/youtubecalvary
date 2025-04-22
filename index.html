@@ -1,57 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Latest YouTube Video</title>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
   <script>
     const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';
-    const CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';
 
-    async function redirectToLatestVideo() {
-      try {
-        // Step 1: Get latest 10 video IDs
-        const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CHANNEL_ID}&part=id&order=date&maxResults=10&type=video`;
-        const searchRes = await fetch(searchUrl);
-        const searchData = await searchRes.json();
+    // Channel IDs
+    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';        // Calvary Prayer Fellowship
+    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';     // CRF Gospel
 
-        const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+    function getISTHour() {
+      const now = new Date();
+      const utcOffset = now.getTimezoneOffset(); // in minutes
+      const istOffset = 330; // IST is UTC+5:30
+      const istTime = new Date(now.getTime() + (istOffset - utcOffset) * 60000);
+      return istTime.getHours();
+    }
 
-        // Step 2: Get video details, including liveStreamingDetails
-        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
-        const detailsRes = await fetch(detailsUrl);
-        const detailsData = await detailsRes.json();
+    function getTargetChannelId() {
+      const hour = getISTHour();
 
-        // Step 3: Filter out any livestream (past, current, or upcoming)
-        const regularUploads = detailsData.items.filter(video => {
-          const live = video.liveStreamingDetails;
-          const isLive = live && !live.actualEndTime;
-          const isPastStream = live && live.actualEndTime;
-          return !isLive && !isPastStream;
-        });
-
-        if (regularUploads.length > 0) {
-          const latest = regularUploads[0];
-          const videoId = latest.id;
-          window.location.href = `https://www.youtube.com/watch?v=${videoId}`;
-        } else {
-          document.body.innerHTML = '<p>No regular uploads found (excluding livestreams).</p>';
-        }
-      } catch (err) {
-        console.error(err);
-        document.body.innerHTML = `<p>Error: ${err.message}</p>`;
+      if (hour >= 10 && hour < 18) {
+        return CALVARY_CHANNEL_ID; // 10:00am – 5:59pm IST
+      } else {
+        return CRF_GOSPEL_CHANNEL_ID; // All other times
       }
     }
 
-    window.onload = redirectToLatestVideo;
+    async function getLatestRegularVideo(channelId) {
+      const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channelId}&part=id&order=date&maxResults=10&type=video`;
+      const searchRes = await fetch(searchUrl);
+      const searchData = await searchRes.json();
+
+      const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+      if (!videoIds) throw new Error("No video IDs found.");
+
+      const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
+      const detailsRes = await fetch(detailsUrl);
+      const detailsData = await detailsRes.json();
+
+      const regularVideos = detailsData.items.filter(video => {
+        const live = video.liveStreamingDetails;
+        const isActiveLive = live && !live.actualEndTime;
+        const isPastLive = live && live.actualEndTime;
+        return !isActiveLive && !isPastLive;
+      });
+
+      if (regularVideos.length === 0) {
+        throw new Error("No suitable non-live videos found.");
+      }
+
+      return regularVideos[0].id;
+    }
+
+    async function redirectToCorrectVideo() {
+      try {
+        const channelId = getTargetChannelId();
+        const latestVideoId = await getLatestRegularVideo(channelId);
+        window.location.href = `https://www.youtube.com/watch?v=${latestVideoId}`;
+      } catch (err) {
+        document.body.innerHTML = `<p>Error: ${err.message}</p>`;
+        console.error(err);
+      }
+    }
+
+    window.onload = redirectToCorrectVideo;
   </script>
 </head>
 <body>
-  <p>Redirecting to the latest video...</p>
-</body>
-</html>
-
-<body>
-  <p>Redirecting to the latest video...</p>
+  <p>Checking time and redirecting...</p>
 </body>
 </html>

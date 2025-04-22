@@ -3,29 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <title>Redirecting...</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
+      font-family: 'Segoe UI', sans-serif;
+      color: #333;
+      text-align: center;
+    }
+
+    .spinner {
+      border: 6px solid #e0e0e0;
+      border-top: 6px solid #3b82f6;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #ist-time {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="spinner"></div>
+  <h2>Hang tight...</h2>
+  <p id="status">Checking time and selecting video...</p>
+  <p id="ist-time"></p>
+
   <script>
     const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';
 
-    // Channel IDs
-    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';        // Calvary Prayer Fellowship
-    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';     // CRF Gospel
+    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';
+    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';
+
+    function getISTTime() {
+      const now = new Date();
+      const localOffset = now.getTimezoneOffset();
+      const istOffset = 330;
+      return new Date(now.getTime() + (istOffset - localOffset) * 60000);
+    }
 
     function getISTHour() {
-      const now = new Date();
-      const utcOffset = now.getTimezoneOffset(); // in minutes
-      const istOffset = 330; // IST is UTC+5:30
-      const istTime = new Date(now.getTime() + (istOffset - utcOffset) * 60000);
-      return istTime.getHours();
+      return getISTTime().getHours();
+    }
+
+    function showISTTime() {
+      const time = getISTTime().toLocaleTimeString('en-IN');
+      document.getElementById('ist-time').innerText = `Indian Time: ${time}`;
+    }
+    setInterval(showISTTime, 1000);
+    showISTTime();
+
+    async function isCalvaryLiveNow() {
+      const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CALVARY_CHANNEL_ID}&part=snippet&eventType=live&type=video`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.items && data.items.length > 0 ? data.items[0].id.videoId : null;
     }
 
     function getTargetChannelId() {
       const hour = getISTHour();
-
-      if (hour >= 10 && hour < 18) {
-        return CALVARY_CHANNEL_ID; // 10:00am – 5:59pm IST
-      } else {
-        return CRF_GOSPEL_CHANNEL_ID; // All other times
-      }
+      if (hour >= 10 && hour < 18) return CALVARY_CHANNEL_ID;
+      return CRF_GOSPEL_CHANNEL_ID;
     }
 
     async function getLatestRegularVideo(channelId) {
@@ -42,9 +97,9 @@
 
       const regularVideos = detailsData.items.filter(video => {
         const live = video.liveStreamingDetails;
-        const isActiveLive = live && !live.actualEndTime;
+        const isLiveNow = live && !live.actualEndTime;
         const isPastLive = live && live.actualEndTime;
-        return !isActiveLive && !isPastLive;
+        return !isLiveNow && !isPastLive;
       });
 
       if (regularVideos.length === 0) {
@@ -56,19 +111,26 @@
 
     async function redirectToCorrectVideo() {
       try {
+        const liveVideoId = await isCalvaryLiveNow();
+
+        if (liveVideoId) {
+          document.getElementById("status").innerText = "Calvary is live right now — redirecting to livestream...";
+          window.location.href = `https://www.youtube.com/watch?v=${liveVideoId}`;
+          return;
+        }
+
         const channelId = getTargetChannelId();
+        document.getElementById("status").innerText = `Checking latest video from ${channelId === CALVARY_CHANNEL_ID ? "Calvary" : "CRF Gospel"}...`;
+
         const latestVideoId = await getLatestRegularVideo(channelId);
         window.location.href = `https://www.youtube.com/watch?v=${latestVideoId}`;
       } catch (err) {
-        document.body.innerHTML = `<p>Error: ${err.message}</p>`;
+        document.getElementById("status").innerText = "Oops! Something went wrong.";
         console.error(err);
       }
     }
 
     window.onload = redirectToCorrectVideo;
   </script>
-</head>
-<body>
-  <p>Checking time and redirecting...</p>
 </body>
 </html>

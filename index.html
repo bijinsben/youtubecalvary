@@ -51,9 +51,9 @@
   <div id="status">Loading video...</div>
 
   <script>
-    const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';
-    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';
-    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';
+    const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';  // Your actual API key
+    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';  // Calvary Prayer Fellowship Channel ID
+    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';  // CRF Gospel Channel ID
 
     async function getISTHour() {
       const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
@@ -65,6 +65,7 @@
       const url = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${CALVARY_CHANNEL_ID}&part=snippet&eventType=live&type=video`;
       const res = await fetch(url);
       const data = await res.json();
+      console.log("Calvary live response:", data);  // Check the live stream data
       return data.items && data.items.length > 0 ? data.items[0].id.videoId : null;
     }
 
@@ -72,6 +73,8 @@
       const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channelId}&part=id&order=date&maxResults=10&type=video`;
       const searchRes = await fetch(searchUrl);
       const searchData = await searchRes.json();
+      console.log("Search response:", searchData);  // Check the video search data
+
       const videoIds = searchData.items.map(item => item.id.videoId).join(',');
 
       if (!videoIds) throw new Error("No videos found.");
@@ -79,6 +82,7 @@
       const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
       const detailsRes = await fetch(detailsUrl);
       const detailsData = await detailsRes.json();
+      console.log("Video details response:", detailsData);  // Check the video details data
 
       const validVideos = detailsData.items.filter(video => {
         const live = video.liveStreamingDetails;
@@ -98,6 +102,7 @@
       try {
         const statusEl = document.getElementById("status");
 
+        // Check if Calvary is live
         const liveVideoId = await isCalvaryLiveNow();
         if (liveVideoId) {
           statusEl.innerText = "Playing Calvary live stream...";
@@ -105,18 +110,24 @@
           return;
         }
 
+        // Get current time in IST
         const hour = await getISTHour();
+        console.log("Current Hour:", hour);  // Check the current hour in the console
+
         const isDaytime = hour >= 10 && hour < 18;
         const selectedChannel = isDaytime ? CALVARY_CHANNEL_ID : CRF_GOSPEL_CHANNEL_ID;
 
         statusEl.innerText = `Fetching latest from ${selectedChannel === CALVARY_CHANNEL_ID ? 'Calvary Prayer Fellowship' : 'CRF Gospel'}...`;
 
+        // Get the latest regular video
         const videoId = await getLatestRegularVideo(selectedChannel);
+        console.log("Video ID:", videoId);  // Check the video ID fetched
+
         embedVideo(videoId);
 
       } catch (err) {
         document.getElementById("status").innerText = "Failed to load video. Please try again.";
-        console.error(err);
+        console.error("Error:", err);  // Log the error for more insights
       }
     }
 

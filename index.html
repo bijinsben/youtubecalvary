@@ -2,29 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Redirecting...</title>
+  <title>CRF / Calvary Video Player</title>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #f0f4ff, #ffffff);
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-      color: #333;
-      padding: 20px;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      flex-direction: column;
     }
 
     .spinner {
-      border: 6px solid #e0e0e0;
-      border-top: 6px solid #3b82f6;
+      border: 6px solid #444;
+      border-top: 6px solid #fff;
       border-radius: 50%;
       width: 50px;
       height: 50px;
       animation: spin 1s linear infinite;
-      margin: 20px;
+      margin-bottom: 20px;
     }
 
     @keyframes spin {
@@ -32,42 +34,21 @@
       100% { transform: rotate(360deg); }
     }
 
-    #ist-time {
-      margin: 10px 0;
-      font-weight: 600;
-      color: #1e3a8a;
+    #status {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
     }
 
-    #schedule {
-      text-align: left;
-      margin-top: 15px;
-      max-width: 400px;
-    }
-
-    #schedule ul {
-      padding-left: 20px;
-    }
-
-    strong {
-      color: #111827;
+    iframe {
+      width: 100vw;
+      height: 100vh;
+      border: none;
     }
   </style>
 </head>
 <body>
   <div class="spinner"></div>
-  <h2>Checking the time & selecting the right video...</h2>
-  <p id="status">Loading IST time...</p>
-  <p id="ist-time"></p>
-
-  <div id="schedule">
-    <strong>Schedule (Indian Standard Time):</strong>
-    <ul>
-      <li><strong>12:00 AM – 9:59 AM:</strong> CRF Gospel</li>
-      <li><strong>10:00 AM – 5:59 PM:</strong> Calvary Prayer Fellowship</li>
-      <li><strong>6:00 PM – 11:59 PM:</strong> CRF Gospel</li>
-    </ul>
-    <p><em>If Calvary is live now, you'll be redirected there immediately.</em></p>
-  </div>
+  <div id="status">Loading video...</div>
 
   <script>
     const API_KEY = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';
@@ -77,9 +58,7 @@
     async function getISTHour() {
       const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
       const data = await res.json();
-      const istDate = new Date(data.datetime);
-      document.getElementById("ist-time").innerText = `Current IST: ${istDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}`;
-      return istDate.getHours();
+      return new Date(data.datetime).getHours();
     }
 
     async function isCalvaryLiveNow() {
@@ -93,8 +72,8 @@
       const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&channelId=${channelId}&part=id&order=date&maxResults=10&type=video`;
       const searchRes = await fetch(searchUrl);
       const searchData = await searchRes.json();
-
       const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+
       if (!videoIds) throw new Error("No videos found.");
 
       const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${API_KEY}&id=${videoIds}&part=snippet,liveStreamingDetails`;
@@ -109,18 +88,20 @@
       });
 
       if (validVideos.length === 0) {
-        throw new Error("No non-live videos available.");
+        throw new Error("No valid regular videos found.");
       }
 
       return validVideos[0].id;
     }
 
-    async function redirectToCorrectVideo() {
+    async function loadVideo() {
       try {
+        const statusEl = document.getElementById("status");
+
         const liveVideoId = await isCalvaryLiveNow();
         if (liveVideoId) {
-          document.getElementById("status").innerText = "Calvary is live now — redirecting...";
-          window.location.href = `https://www.youtube.com/watch?v=${liveVideoId}`;
+          statusEl.innerText = "Playing Calvary live stream...";
+          embedVideo(liveVideoId);
           return;
         }
 
@@ -128,17 +109,22 @@
         const isDaytime = hour >= 10 && hour < 18;
         const selectedChannel = isDaytime ? CALVARY_CHANNEL_ID : CRF_GOSPEL_CHANNEL_ID;
 
-        document.getElementById("status").innerText = `Fetching latest video from ${selectedChannel === CALVARY_CHANNEL_ID ? 'Calvary Prayer Fellowship' : 'CRF Gospel'}...`;
+        statusEl.innerText = `Fetching latest from ${selectedChannel === CALVARY_CHANNEL_ID ? 'Calvary Prayer Fellowship' : 'CRF Gospel'}...`;
 
         const videoId = await getLatestRegularVideo(selectedChannel);
-        window.location.href = `https://www.youtube.com/watch?v=${videoId}`;
-      } catch (error) {
-        document.getElementById("status").innerText = "Error occurred. Please try again.";
-        console.error(error);
+        embedVideo(videoId);
+
+      } catch (err) {
+        document.getElementById("status").innerText = "Failed to load video. Please try again.";
+        console.error(err);
       }
     }
 
-    window.onload = redirectToCorrectVideo;
+    function embedVideo(videoId) {
+      document.body.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1" allowfullscreen allow="autoplay; encrypted-media"></iframe>`;
+    }
+
+    window.onload = loadVideo;
   </script>
 </body>
 </html>

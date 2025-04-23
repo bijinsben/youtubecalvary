@@ -55,10 +55,12 @@
     const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';  // Calvary Prayer Fellowship Channel ID
     const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';  // CRF Gospel Channel ID
 
-    async function getISTHour() {
-      const res = await fetch("https://worldtimeapi.org/api/timezone/Asia/Kolkata");
-      const data = await res.json();
-      return new Date(data.datetime).getHours();
+    // Get IST hour directly using JavaScript Date object
+    function getISTHour() {
+      const date = new Date();
+      const utc = date.getTime() + date.getTimezoneOffset() * 60000;
+      const istDate = new Date(utc + (5.5 * 60 * 60000)); // IST = UTC + 5:30
+      return istDate.getHours();
     }
 
     async function isCalvaryLiveNow() {
@@ -111,7 +113,7 @@
         }
 
         // Get current time in IST
-        const hour = await getISTHour();
+        const hour = getISTHour();  // Use the new function to get IST time
         console.log("Current Hour:", hour);  // Check the current hour in the console
 
         const isDaytime = hour >= 10 && hour < 18;

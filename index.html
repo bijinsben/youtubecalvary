@@ -54,9 +54,9 @@
 
     function getISTTime() {
       const now = new Date();
-      const localOffset = now.getTimezoneOffset();
-      const istOffset = 330;
-      return new Date(now.getTime() + (istOffset - localOffset) * 60000);
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000); // convert to UTC
+      const ist = new Date(utc + (330 * 60000)); // add 5h30m for IST
+      return ist;
     }
 
     function getISTHour() {
@@ -114,13 +114,15 @@
         const liveVideoId = await isCalvaryLiveNow();
 
         if (liveVideoId) {
-          document.getElementById("status").innerText = "Calvary is live right now — redirecting to livestream...";
+          document.getElementById("status").innerText = "Calvary is live now — redirecting...";
           window.location.href = `https://www.youtube.com/watch?v=${liveVideoId}`;
           return;
         }
 
         const channelId = getTargetChannelId();
-        document.getElementById("status").innerText = `Checking latest video from ${channelId === CALVARY_CHANNEL_ID ? "Calvary" : "CRF Gospel"}...`;
+        document.getElementById("status").innerText = `Checking latest video from ${
+          channelId === CALVARY_CHANNEL_ID ? "Calvary Prayer Fellowship" : "CRF Gospel"
+        }...`;
 
         const latestVideoId = await getLatestRegularVideo(channelId);
         window.location.href = `https://www.youtube.com/watch?v=${latestVideoId}`;

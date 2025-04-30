@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CRF / Calvary Video Player</title>
+  <title> YOUTUBE PRAYER VIDEO </title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: #000;
+      /* Responsive animated background */
+      background: linear-gradient(45deg, #1e1e1e, #2a2a72, #e52a2a, #ffffff);
+      background-size: 400% 400%;
+      animation: backgroundAnimation 10s ease infinite;
       height: 100%;
       width: 100%;
       overflow: hidden;
@@ -15,145 +18,313 @@
       align-items: center;
       justify-content: center;
       font-family: 'Segoe UI', sans-serif;
-      color: white;
+      position: relative;
+    }
+
+    @keyframes backgroundAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Loader container for fade transition */
+    #loader {
+      display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 90%;
+      max-width: 600px;
+      padding: 20px;
+      box-sizing: border-box;
+      transition: opacity 1s ease-out;
+      z-index: 2;
     }
 
-    .spinner {
-      border: 6px solid #444;
-      border-top: 6px solid #fff;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
+    .fade-out {
+      opacity: 0;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    /* Progress bar container */
+    #progress-container {
+      width: 100%;
+      max-width: 300px;
+      height: 10px;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00c6ff, #0072ff);
+      width: 0%;
+      animation: progressAnimation 5s linear forwards;
+    }
+
+    @keyframes progressAnimation {
+      0% { width: 0%; }
+      100% { width: 100%; }
     }
 
     #status {
       font-size: 1.2rem;
+      font-family: "Arial Black", sans-serif;
+      font-weight: bold;
+      color: black;
+      padding: 10px 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
       margin-bottom: 10px;
     }
 
-    iframe {
-      width: 100vw;
-      height: 100vh;
-      border: none;
+    /* IST time display */
+    #ist-time {
+      font-size: 0.9rem;
+      color: #ffffff;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+
+    /* Animated Christian Cross */
+    #thematic-effect {
+      position: absolute;
+      width: 100px;
+      height: 150px;
+      top: 20px;
+      left: calc(50% - 50px);
+      pointer-events: none;
+      opacity: 0.8;
+      animation: crossGlow 3s ease-in-out infinite;
+      z-index: 1;
+    }
+
+    #thematic-effect::before,
+    #thematic-effect::after {
+      content: '';
+      position: absolute;
+      background: #FFFFFF; /* White color for the cross */
+      border-radius: 0; /* Sharp edges for a traditional look */
+    }
+
+    /* Vertical bar of the Christian cross */
+    #thematic-effect::before {
+      width: 14px;
+      height: 150px;
+      left: calc(50% - 7px);
+      top: 0;
+    }
+
+    /* Horizontal bar of the Christian cross */
+    #thematic-effect::after {
+      width: 100px;
+      height: 14px;
+      top: 50px;
+      left: 0;
+    }
+
+    @keyframes crossGlow {
+      0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 5px #fff); }
+      50% { opacity: 1; filter: drop-shadow(0 0 15px #fff); }
+    }
+
+    /* Fade-in animation for the video embed */
+    .fade-in {
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      #status {
+        font-size: 1rem;
+        padding: 8px 16px;
+      }
+      #ist-time {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <div id="status">Loading video...</div>
+  <!-- Animated Christian Cross -->
+  <div id="thematic-effect"></div>
+
+  <!-- Loader -->
+  <div id="loader">
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="status">Connecting to ...</div>
+    <div id="ist-time">00 : 00 : 00</div>
+  </div>
 
   <script>
-    const API_KEY_1 = 'AIzaSyAanMTtHl2o_pnMBB3i81pDsXV8TBsEdr0';  // API Key 1
-    const API_KEY_2 = 'AIzaSyAhoe3SpaEJOSBbevfOoqsIgk8mhKbNzLA';  // API Key 2
-    const API_KEY_3 = 'AIzaSyCkWgPFPkJhnpeZxRgcwCUpt8bxpgqbNzg';  // API Key 3 (You can replace this with another key)
-    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';  // Calvary Prayer Fellowship Channel ID
-    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';  // CRF Gospel Channel ID
+    // API key and channel ID variables
+    const API_KEY_1 = 'AIzaSyAanMTtHl2o_pnMBB3i81pDsXV8TBsEdr0';
+    const CALVARY_CHANNEL_ID = 'UC9TN8IPrNdTEARAqAkJFE8g';  // Calvary Prayer Fellowship Channel
+    const CRF_GOSPEL_CHANNEL_ID = 'UC1NV48zXdJnG6oQ4NtjsELA';  // CRF Gospel Channel
 
-    // Get IST hour directly using JavaScript Date object
-    function getISTHour() {
+    // Utility: Get the current IST date and time
+    function getISTDate() {
       const date = new Date();
       const utc = date.getTime() + date.getTimezoneOffset() * 60000;
-      const istDate = new Date(utc + (5.5 * 60 * 60000)); // IST = UTC + 5:30
-      return istDate.getHours();
+      return new Date(utc + (5.5 * 60 * 60000));
     }
 
+    // Update live IST time (formatted as HH : MM : SS)
+    function updateISTTime() {
+      const istDate = getISTDate();
+      const hours = istDate.getHours().toString().padStart(2, '0');
+      const minutes = istDate.getMinutes().toString().padStart(2, '0');
+      const seconds = istDate.getSeconds().toString().padStart(2, '0');
+      document.getElementById("ist-time").innerText = `${hours} : ${minutes} : ${seconds}`;
+    }
+
+    // Updates dynamic status messages sequentially. The "isLive" flag determines the message.
+    function updateStatusMessages(channelName, isLive) {
+      // Immediately: "Connecting to [channelName]..."
+      document.getElementById("status").innerText = `Connecting to ${channelName}...`;
+      
+      // After 1 sec: Live check or fetch message.
+      setTimeout(() => {
+        if (isLive) {
+          document.getElementById("status").innerText = `Checking for live streams on ${channelName}...`;
+        } else {
+          document.getElementById("status").innerText = `Fetching the latest video from ${channelName}...`;
+        }
+      }, 1000);
+      
+      // After 2.5 sec: "Fetching video details from [channelName]..."
+      setTimeout(() => {
+        document.getElementById("status").innerText = `Fetching video details from ${channelName}...`;
+      }, 2500);
+      
+      // After 4 sec: "Preparing video playback from [channelName]..."
+      setTimeout(() => {
+        document.getElementById("status").innerText = `Preparing video playback from ${channelName}...`;
+      }, 4000);
+    }
+
+    // Check for live streams on the Calvary channel only.
     async function isCalvaryLiveNow(apiKey) {
       const url = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${CALVARY_CHANNEL_ID}&part=snippet&eventType=live&type=video`;
-      const res = await fetch(url);
-      const data = await res.json();
-      console.log("Calvary live response:", data);
-      return data.items && data.items.length > 0 ? data.items[0].id.videoId : null;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.items && data.items.length > 0 ? data.items[0].id.videoId : null;
+      } catch (error) {
+        console.error("Live stream error:", error);
+        return null;
+      }
     }
 
+    // Fetch the latest regular video details from a given channel.
     async function getLatestRegularVideo(channelId, apiKey) {
       const searchUrl = `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=id&order=date&maxResults=10&type=video`;
-      const searchRes = await fetch(searchUrl);
-      const searchData = await searchRes.json();
-      console.log("Search response:", searchData);
-
-      const videoIds = searchData.items.map(item => item.id.videoId).join(',');
-
-      if (!videoIds) throw new Error("No videos found.");
-
-      const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=snippet,liveStreamingDetails`;
-      const detailsRes = await fetch(detailsUrl);
-      const detailsData = await detailsRes.json();
-      console.log("Video details response:", detailsData);
-
-      const validVideos = detailsData.items.filter(video => {
-        const live = video.liveStreamingDetails;
-        const isLiveNow = live && !live.actualEndTime;
-        const isPastLive = live && live.actualEndTime;
-        return !isLiveNow && !isPastLive;
-      });
-
-      if (validVideos.length === 0) {
-        throw new Error("No valid regular videos found.");
-      }
-
-      return validVideos[0].id;
-    }
-
-    async function loadVideo() {
       try {
-        const statusEl = document.getElementById("status");
-
-        // Check if Calvary is live using the 3 API keys
-        let liveVideoId = await isCalvaryLiveNow(API_KEY_1);  // Try first API key
-        if (!liveVideoId) {
-          liveVideoId = await isCalvaryLiveNow(API_KEY_2);  // Try second API key
+        const searchRes = await fetch(searchUrl);
+        const searchData = await searchRes.json();
+        const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+        if (!videoIds) throw new Error("No videos found.");
+      
+        const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&id=${videoIds}&part=snippet,liveStreamingDetails`;
+        const detailsRes = await fetch(detailsUrl);
+        const detailsData = await detailsRes.json();
+        
+        const validVideos = detailsData.items.filter(video => {
+          const live = video.liveStreamingDetails;
+          const isLiveNow = live && !live.actualEndTime;
+          const isPastLive = live && live.actualEndTime;
+          return !isLiveNow && !isPastLive;
+        });
+      
+        if (validVideos.length === 0) {
+          throw new Error("No valid regular videos found.");
         }
-        if (!liveVideoId) {
-          liveVideoId = await isCalvaryLiveNow(API_KEY_3);  // Try third API key
-        }
-
-        if (liveVideoId) {
-          statusEl.innerText = "Playing Calvary live stream...";
-          embedVideo(liveVideoId);
-          return;
-        }
-
-        // Get current time in IST
-        const hour = getISTHour();  // Use the new function to get IST time
-        console.log("Current Hour:", hour);  // Check the current hour in the console
-
-        const isDaytime = hour >= 10 && hour < 18;
-        const selectedChannel = isDaytime ? CALVARY_CHANNEL_ID : CRF_GOSPEL_CHANNEL_ID;
-        const apiKeyToUse = isDaytime ? API_KEY_1 : API_KEY_2;  // You can choose API keys based on the channel
-
-        statusEl.innerText = `Fetching latest from ${selectedChannel === CALVARY_CHANNEL_ID ? 'Calvary Prayer Fellowship' : 'CRF Gospel'}...`;
-
-        // Get the latest regular video
-        const videoId = await getLatestRegularVideo(selectedChannel, apiKeyToUse);
-        console.log("Video ID:", videoId);  // Check the video ID fetched
-
-        embedVideo(videoId);
-
-      } catch (err) {
-        document.getElementById("status").innerText = "Failed to load video. Please try again.";
-        console.error("Error:", err);  // Log the error for more insights
+        return validVideos[0].id;
+      } catch (error) {
+        console.error("Get latest video error:", error);
+        throw error;
       }
     }
 
+    // Main function: Load video based on live availability & time-based logic.
+    async function loadVideo() {
+      const loader = document.getElementById("loader");
+      try {
+        const channelName = "Calvary Prayer Fellowship";  // Always used for live stream check.
+        
+        // Step 1: Check for live stream on Calvary (ignoring CRF for live).
+        const liveVideoId = await isCalvaryLiveNow(API_KEY_1);
+        if (liveVideoId) {
+          updateStatusMessages(channelName, true);
+          // Wait 5 seconds (allowing the progress bar and messages to play out)
+          setTimeout(() => {
+            loader.classList.add("fade-out");
+            setTimeout(() => {
+              embedVideo(liveVideoId);
+            }, 1000);
+          }, 5000);
+          return;  // Stop further logic.
+        }
+        
+        // No live stream found; update status messages for non-live content.
+        updateStatusMessages(channelName, false);
+        
+        // Step 2: Check current IST time to determine the channel to use.
+        const istDate = getISTDate();
+        const totalMinutes = istDate.getHours() * 60 + istDate.getMinutes();
+        let videoId;
+        // From 10:00 AM (600 min) to 8:15 PM (1215 min): use Calvary.
+        if (totalMinutes >= 600 && totalMinutes < 1215) {
+          console.log("Playing the latest regular video from Calvary Prayer Fellowship...");
+          videoId = await getLatestRegularVideo(CALVARY_CHANNEL_ID, API_KEY_1);
+        } else {
+          console.log("Playing the latest regular video from CRF Gospel...");
+          videoId = await getLatestRegularVideo(CRF_GOSPEL_CHANNEL_ID, API_KEY_1);
+        }
+        
+        // Wait until the progress bar animation finishes (5 seconds), then fade out loader and embed video.
+        setTimeout(() => {
+          loader.classList.add("fade-out");
+          setTimeout(() => {
+            embedVideo(videoId);
+          }, 1000);
+        }, 5000);
+      
+      } catch (err) {
+        document.getElementById("status").innerText = "Failed to load video. Please try again later.";
+        console.error("Load video error:", err);
+      }
+    }
+
+    // Replace the loader with the video iframe embedded with a fade-in effect.
     function embedVideo(videoId) {
       document.body.innerHTML = `
-        <iframe
+        <iframe class="fade-in"
           src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
           allowfullscreen
           allow="autoplay; encrypted-media"
-        ></iframe>
+          style="width:100vw; height:100vh; border:none;">
+        </iframe>
       `;
     }
 
-    window.onload = loadVideo;
+    // Set up IST time updates and start the loading process.
+    window.onload = function() {
+      updateISTTime();
+      setInterval(updateISTTime, 1000);
+      loadVideo();
+    };
   </script>
 </body>
 </html>

@@ -163,7 +163,7 @@
     <div id="progress-container">
       <div id="progress-bar"></div>
     </div>
-    <div id="status">Connecting to ...</div>
+    <div id="status">Connecting...</div>
     <div id="ist-time">00 : 00 : 00</div>
   </div>
 
@@ -191,26 +191,26 @@
 
     // Updates dynamic status messages sequentially. The "isLive" flag determines the message.
     function updateStatusMessages(channelName, isLive) {
-      // Immediately: "Connecting to [channelName]..."
-      document.getElementById("status").innerText = `Connecting to ${channelName}...`;
+      // Immediately: "Connecting..."
+      document.getElementById("status").innerText = `Connecting...`;
       
       // After 1 sec: Live check or fetch message.
       setTimeout(() => {
         if (isLive) {
-          document.getElementById("status").innerText = `Checking for live streams on ${channelName}...`;
+          document.getElementById("status").innerText = `Checking for live streams...`;
         } else {
-          document.getElementById("status").innerText = `Fetching the latest video from ${channelName}...`;
+          document.getElementById("status").innerText = `Fetching the latest video...`;
         }
       }, 1000);
       
-      // After 2.5 sec: "Fetching video details from [channelName]..."
+      // After 2.5 sec: "Fetching video details..."
       setTimeout(() => {
-        document.getElementById("status").innerText = `Fetching video details from ${channelName}...`;
+        document.getElementById("status").innerText = `Fetching video details...`;
       }, 2500);
       
-      // After 4 sec: "Preparing video playback from [channelName]..."
+      // After 4 sec: "Preparing video playback..."
       setTimeout(() => {
-        document.getElementById("status").innerText = `Preparing video playback from ${channelName}...`;
+        document.getElementById("status").innerText = `Preparing video playback...`;
       }, 4000);
     }
 

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title> YOUTUBE PRAYER VIDEO </title>
+  <title>YOUTUBE PRAYER VIDEO</title>
   <style>
     html, body {
       margin: 0;
@@ -26,6 +26,25 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
+    
+    /* Background Enhancement: Soft blur and gentle wave effect */
+    html::before, body::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: inherit;
+      filter: blur(3px);
+      opacity: 0.3;
+      z-index: 0;
+      animation: wave 5s infinite alternate;
+    }
+    @keyframes wave {
+      from { transform: scale(1); }
+      to   { transform: scale(1.05); }
+    }
 
     /* Loader container for fade transition */
     #loader {
@@ -39,6 +58,13 @@
       box-sizing: border-box;
       transition: opacity 1s ease-out;
       z-index: 2;
+      margin-top: -30px; /* Moved up slightly */
+      opacity: 0;
+      animation: loaderFadeIn 1s forwards;
+    }
+    @keyframes loaderFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
 
     .fade-out {
@@ -62,9 +88,8 @@
       width: 0%;
       animation: progressAnimation 5s linear forwards;
     }
-
     @keyframes progressAnimation {
-      0% { width: 0%; }
+      0%  { width: 0%; }
       100% { width: 100%; }
     }
 
@@ -80,13 +105,18 @@
       margin-bottom: 10px;
     }
 
-    /* IST time display */
+    /* IST time display positioned at bottom center */
     #ist-time {
       font-size: 0.9rem;
       color: #ffffff;
       background: rgba(0, 0, 0, 0.4);
       padding: 5px 10px;
       border-radius: 5px;
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
     }
 
     /* Animated Christian Cross */
@@ -101,7 +131,6 @@
       animation: crossGlow 3s ease-in-out infinite;
       z-index: 1;
     }
-
     #thematic-effect::before,
     #thematic-effect::after {
       content: '';
@@ -109,36 +138,32 @@
       background: #FFFFFF; /* White color for the cross */
       border-radius: 0; /* Sharp edges for a traditional look */
     }
-
-    /* Vertical bar of the Christian cross */
+    /* Vertical bar of the cross */
     #thematic-effect::before {
       width: 14px;
       height: 150px;
       left: calc(50% - 7px);
       top: 0;
     }
-
-    /* Horizontal bar of the Christian cross */
+    /* Horizontal bar of the cross */
     #thematic-effect::after {
       width: 100px;
       height: 14px;
       top: 50px;
       left: 0;
     }
-
     @keyframes crossGlow {
       0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 5px #fff); }
-      50% { opacity: 1; filter: drop-shadow(0 0 15px #fff); }
+      50%     { opacity: 1; filter: drop-shadow(0 0 15px #fff); }
     }
 
     /* Fade-in animation for the video embed */
     .fade-in {
       animation: fadeIn 1s ease-in-out;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; }
-      to { opacity: 1; }
+      to   { opacity: 1; }
     }
 
     /* Responsive adjustments */
@@ -152,9 +177,64 @@
         padding: 4px 8px;
       }
     }
+
+    /* Menu Styling: Two boxes side by side */
+    #menu {
+      position: absolute;
+      top: 75%; /* Moved further down to avoid interfering with loader text */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 3;
+      display: flex;
+      gap: 20px;
+      opacity: 0;
+      animation: menuFadeScale 1s forwards;
+    }
+    @keyframes menuFadeScale {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .menu-box {
+      width: 150px;
+      height: 100px;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+      font-weight: bold;
+      border: 3px solid;
+      /* Combining two animations: one for background and one for border */
+      animation: gradientAnimation 4s ease infinite, borderAnimation 4s infinite;
+      background: linear-gradient(45deg, #ff0080, #ff8c00, #40e0d0);
+      background-size: 300% 300%;
+      cursor: default;
+    }
+    /* Make the first box longer to fit text in one line */
+    .menu-box[data-option="1"] {
+      width: 200px;
+    }
+    @keyframes gradientAnimation {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes borderAnimation {
+      0%   { border-color: silver; }
+      33%  { border-color: gold; }
+      66%  { border-color: cyan; }
+      100% { border-color: silver; }
+    }
   </style>
 </head>
 <body>
+  <!-- Menu Screen -->
+  <div id="menu">
+    <div class="menu-box" data-option="1">1 - PRAYER</div>
+    <div class="menu-box" data-option="2">2 - NEWS</div>
+  </div>
+
   <!-- Animated Christian Cross -->
   <div id="thematic-effect"></div>
 
@@ -257,7 +337,7 @@
       }
     }
 
-    // Main function: Load video based on live availability & time-based logic.
+    // Main function for prayer option: Load video based on live availability & time-based logic.
     async function loadVideo() {
       const loader = document.getElementById("loader");
       try {
@@ -307,7 +387,7 @@
       }
     }
 
-    // Replace the loader with the video iframe embedded with a fade-in effect.
+    // Embed video within the page with fade-in animation (for prayer option)
     function embedVideo(videoId) {
       document.body.innerHTML = `
         <iframe class="fade-in"
@@ -317,13 +397,61 @@
           style="width:100vw; height:100vh; border:none;">
         </iframe>
       `;
+      // Auto-Fullscreen trigger
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.requestFullscreen) {
+          iframe.requestFullscreen();
+      } else if (iframe && iframe.webkitRequestFullscreen) {
+          iframe.webkitRequestFullscreen();
+      } else if (iframe && iframe.mozRequestFullScreen) {
+          iframe.mozRequestFullScreen();
+      } else if (iframe && iframe.msRequestFullscreen) {
+          iframe.msRequestFullscreen();
+      }
+    }
+    
+    // Embed news video immediately (for news option)
+    function embedNewsVideo() {
+      document.body.innerHTML = `
+        <iframe class="fade-in"
+          src="https://www.youtube.com/embed/Ko18SgceYX8?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+          allowfullscreen
+          allow="autoplay; encrypted-media"
+          style="width:100vw; height:100vh; border:none;">
+        </iframe>
+      `;
+      // Auto-Fullscreen trigger for news video
+      const iframe = document.querySelector('iframe');
+      if (iframe && iframe.requestFullscreen) {
+          iframe.requestFullscreen();
+      } else if (iframe && iframe.webkitRequestFullscreen) {
+          iframe.webkitRequestFullscreen();
+      } else if (iframe && iframe.mozRequestFullScreen) {
+          iframe.mozRequestFullScreen();
+      } else if (iframe && iframe.msRequestFullscreen) {
+          iframe.msRequestFullscreen();
+      }
     }
 
-    // Set up IST time updates and start the loading process.
+    // Set up IST time updates and menu key listener on window load
     window.onload = function() {
       updateISTTime();
       setInterval(updateISTTime, 1000);
-      loadVideo();
+      
+      // Listen for keydown events for menu selection.
+      document.addEventListener("keydown", function(event) {
+        if(event.key === "1") {
+          // Remove menu and proceed with prayer option.
+          const menuDiv = document.getElementById("menu");
+          if(menuDiv) { menuDiv.remove(); }
+          loadVideo();
+        } else if(event.key === "2") {
+          // Remove menu and proceed with news option.
+          const menuDiv = document.getElementById("menu");
+          if(menuDiv) { menuDiv.remove(); }
+          embedNewsVideo();
+        }
+      });
     };
   </script>
 </body>
